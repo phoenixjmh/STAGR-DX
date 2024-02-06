@@ -268,7 +268,7 @@ void Renderer::ApplyEditorPositionsToModel(Model&  model,float size,glm::vec3 po
 void Renderer::DrawScene(float alpha)
 {
     DepthPass(alpha);
-    //drawPointLight(0.2,m_sceneData.light_data.light_position);
+    drawPointLight(1,m_sceneData.light_data.light_position);
 
  
     for (auto& s : Physics::all_sand)

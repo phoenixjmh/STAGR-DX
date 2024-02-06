@@ -45,7 +45,13 @@ void Model::loadModel(const char* path)
 {
     std::string filepath = static_cast<std::string>(path);
     Assimp::Importer import;
-    const aiScene * scene = import.ReadFile(filepath, aiProcess_Triangulate | aiProcess_MakeLeftHanded | aiProcess_FlipWindingOrder);
+    const aiScene * scene = import.ReadFile(filepath,
+        aiProcess_Triangulate| 
+        aiProcess_FlipWindingOrder |
+        aiProcess_CalcTangentSpace
+        /* |
+        aiProcess_MakeLeftHanded |
+        aiProcess_ConvertToLeftHanded*/);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -105,6 +111,14 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         {
             vertex.TexCoords = XMFLOAT2(0.0f, 0.0f);
         }
+        vertex.Tangents.x = mesh->mTangents[i].x;
+        vertex.Tangents.y = mesh->mTangents[i].y;
+        vertex.Tangents.z = mesh->mTangents[i].z;
+
+        vertex.BiTangents.x = mesh->mBitangents[i].x;
+        vertex.BiTangents.y = mesh->mBitangents[i].y;
+        vertex.BiTangents.z = mesh->mBitangents[i].z;
+        
 
         vertices.push_back(vertex);
     }
@@ -127,8 +141,8 @@ Mesh Model::processMesh(aiMesh* mesh, const aiScene* scene)
         material, aiTextureType_SPECULAR, "texture_specular",scene,1);
     textures.insert(textures.end(), specular_maps.begin(), specular_maps.end());
 
-    //std::vector<Texture> normal_maps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal");
-    //textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
+    std::vector<Texture> normal_maps = loadMaterialTextures(material, aiTextureType_HEIGHT, "texture_normal",scene,2);
+    textures.insert(textures.end(), normal_maps.begin(), normal_maps.end());
 
     //std::vector<Texture> height_maps = loadMaterialTextures(material, aiTextureType_AMBIENT, "texture_height");
     //textures.insert(textures.end(), height_maps.begin(), height_maps.end());

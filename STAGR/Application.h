@@ -1,10 +1,8 @@
 #pragma once
 #include "Editor.h"
-//#include "Mouse.h"
-//#include "Physics.h"
-//#include "Renderer.h"
 #include "Renderer.h"
 #include "InputManager.h"
+#pragma comment(lib, "winmm.lib")
 
 
 class Application {
@@ -35,7 +33,7 @@ private:
 
     // Time logic
 
-    double currentTime;
+    double m_currentTime;
     double Time;
     double DeltaTime;
     double Alpha;

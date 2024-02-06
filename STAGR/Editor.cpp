@@ -22,6 +22,9 @@ void Editor::init_imgui(const Window& window)
     ImGui::StyleColorsDark();
     ImGui_ImplWin32_Init(window.GetWindow());
     ImGui_ImplDX11_Init(Renderer::Get().GetDevice().Get(),Renderer::Get().GetContext().Get() );
+
+    io->ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io->ConfigFlags |= ImGuiDockNodeFlags_PassthruCentralNode;
 }
 
 void Editor::AddObjectTransformEditor(unsigned int index)
@@ -86,6 +89,10 @@ void Editor::BuildEditorWindow()
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
+    //ImGuiViewport* viewport = ImGui::GetWindowViewport();
+    ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),ImGuiDockNodeFlags_PassthruCentralNode);
+    ImGui::ShowDemoWindow();
+
 
     static float f = 0.0f;
     static int counter = 0;
@@ -157,8 +164,8 @@ void Editor::BuildEditorWindow()
         ImGui::SliderFloat("Light z",light_posz,-20,20);
         ImGui::End();
     }
-    ImGui::Render();
 
+    ImGui::Render();
 }
 
 void Editor::Render()

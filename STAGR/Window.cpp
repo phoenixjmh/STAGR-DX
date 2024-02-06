@@ -4,7 +4,7 @@
 #define THROW_HRESULT(hrcall) if( FAILED( hr = (hrcall) ) ) std::cerr<< __LINE__<<__FILE__<<hr <<"\n"
 void Window::Init()
 {
-    
+
     HRESULT hr;
     WNDCLASSEXW wcex(
         sizeof(WNDCLASSEXW)
@@ -23,19 +23,29 @@ void Window::Init()
     m_windowClass = RegisterClassExW(&wcex);
     if (m_windowClass == 0)
     {
-        std::cerr<<"Failed to create window!\n";
+        std::cerr << "Failed to create window!\n";
     }
     m_window = CreateWindowExW(
         WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW,
         (LPCWSTR)m_windowClass, L"STAGR",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
-        0, 0,1280 , 720,
+        0, 0, 1280, 720,
         nullptr, nullptr, wcex.hInstance,
         this);
 
     if (m_window == nullptr)
     {
-       std::cerr<< GetLastError()<<"\n";
+        std::cerr << GetLastError() << "\n";
+    }
+
+    RAWINPUTDEVICE rid;
+    rid.usUsagePage = 0x01;
+    rid.usUsage = 0x02;
+    rid.dwFlags = 0;
+    rid.hwndTarget = nullptr;
+    if (RegisterRawInputDevices(&rid, 1, sizeof(rid)) == FALSE)
+    {
+        MessageBoxA(m_window, "Failed to create Raw input device for mouse", "INPUT DEVICE ERROR", MB_ABORTRETRYIGNORE);
     }
 
 }
@@ -73,7 +83,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg
 
 LRESULT Window::HandleMessageSetup(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-   
+
     if (msg == WM_NCCREATE)
     {
 
@@ -100,27 +110,143 @@ LRESULT Window::HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noe
 {
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
+   
+   
     switch (msg)
     {
     case WM_CLOSE:
         m_shouldClose = true;
         PostQuitMessage(0);
         return 0;
-        //==================================
-        //       KEYBOARD MESSAGES
+        /*
+==================================
+
+        KEYBOARD MESSAGES
+
+==================================
+        */
+
+    case WM_LBUTTONDOWN:
+        if (IsContextInitialized&&!ImGui::GetIO().WantCaptureMouse)
+        {
+            std::cout << "Hit";
+            DisableCursor(hWnd);
+        }
+        break;
 
     case WM_KEYDOWN:
-        InputManager::Get().OnKeyPressed(static_cast<UINT8>(wParam));
+        InputManager::Get().OnKeyPressed(static_cast<unsigned char>(wParam));
 
-        //kbd.OnKeyPressed(static_cast<unsigned char> (wParam));
+        if (wParam == VK_ESCAPE)
+        {
+            EnableCursor();
+        }
         break;
 
     case WM_KEYUP:
-        //kbd.OnKeyReleased(static_cast<unsigned char> (wParam));
+        InputManager::Get().OnKeyReleased(static_cast<unsigned char> (wParam));
         break;
-        //      END KEYBOARD MESSAGES
-        //==================================
 
+        /*
+====================================
+
+          MOUSE MESSAGES
+
+====================================
+        */
+
+    case WM_INPUT:
+    {
+        if (!RawInputListen)
+        {
+            break;
+        }
+        UINT size;
+        if (GetRawInputData(
+            reinterpret_cast<HRAWINPUT>(lParam),
+            RID_INPUT,
+            nullptr,
+            &size,
+            sizeof(RAWINPUTHEADER)) == -1)
+        {
+            break;
+        }
+        rawBuffer.resize(size);
+        if (GetRawInputData(
+            reinterpret_cast<HRAWINPUT>(lParam),
+            RID_INPUT,
+            rawBuffer.data(),
+            &size,
+            sizeof(RAWINPUTHEADER)) != size)
+        {
+            break;
+        }
+
+        auto& raw_input = reinterpret_cast<const RAWINPUT&>(*rawBuffer.data());
+        if (raw_input.header.dwType == RIM_TYPEMOUSE &&
+            (raw_input.data.mouse.lLastX != 0
+                ||
+                raw_input.data.mouse.lLastY != 0))
+        {
+            InputManager::Get().HandleMouseRawInput(raw_input.data.mouse.lLastX, raw_input.data.mouse.lLastY);
+        }
+        break;
+    }
+
+    case WM_MOUSEMOVE:
+        //InputManager::Get().OnMouseMove(static_cast<uint8_t>(wParam), static_cast<uint32_t>(lParam));
+        break;
     }
     return DefWindowProc(hWnd, msg, wParam, lParam);
+}
+
+
+void Window::EnableCursor()
+{
+    ImGui::GetIO().ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+    ShowCursor(true);
+    ClipCursor(nullptr);
+    ReleaseCapture();
+    MouseListen = false;
+    DisableRawInput();
+
+}
+
+void Window::DisableCursor(const HWND& hWnd)
+{
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_NoMouse;
+    RECT rect;
+    GetClientRect(hWnd, &rect);
+    rect.left /= 2;
+    rect.right /= 2;
+    rect.bottom /= 2;
+    rect.top /= 2;
+    MapWindowPoints(hWnd, nullptr, reinterpret_cast<POINT*>(&rect), 2);
+    ClipCursor(&rect);
+    ShowCursor(false);
+    LockCursorToCenter();
+    MouseListen = true;
+    EnableRawInput();
+
+}
+
+void Window::LockCursorToCenter()
+{
+    RECT rect;
+    POINT center;
+    GetClientRect(m_window, &rect);
+    center.x = (rect.left + rect.right) / 2;
+    center.y = (rect.left + rect.right) / 2;
+
+   
+}
+
+void Window::DisableRawInput()
+{
+    RawInputListen = false;
+}
+
+void Window::EnableRawInput()
+{
+    RawInputListen = true;
 }

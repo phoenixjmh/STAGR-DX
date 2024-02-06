@@ -8,6 +8,11 @@ struct MVPConstantBuffer {
      glm::mat4 ModelMatrix;
 };
 
+struct Vec3PosBuffer {
+    alignas(16)glm::vec3 position;
+};
+
+
 
 struct ConstantBuffer2 {
     struct {
@@ -85,9 +90,9 @@ public:
 
 
 
-    void Bind() 
+    void Bind(unsigned int slot) 
     {
-        GetContext()->VSSetConstantBuffers(0u, 1u, CBuffer.GetAddressOf());
+        GetContext()->VSSetConstantBuffers(slot, 1u, CBuffer.GetAddressOf());
     }
 };
 
@@ -99,9 +104,9 @@ class PixelConstantBuffer : public ConstantBuffer {
 
 public:
 
-    void Bind()
+    void Bind(unsigned int slot)
     {
-        GetContext()->PSSetConstantBuffers(0u, 1u, CBuffer.GetAddressOf());
+        GetContext()->PSSetConstantBuffers(slot, 1u, CBuffer.GetAddressOf());
     }
 };
 

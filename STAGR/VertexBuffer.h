@@ -6,14 +6,18 @@
 enum PrimitiveShape { NONE, PLANE, CUBE, SPHERE };
 using namespace DirectX;
 struct Vertex {
-    Vertex(glm::vec3 pos, glm::vec3 norm,XMFLOAT2 texCoord) :
+    Vertex(glm::vec3 pos, glm::vec3 norm,XMFLOAT2 texCoord,glm::vec3 tangent,glm::vec3 bitangent) :
         Position(pos),
         Normal(norm),
-        TexCoords(texCoord)
+        TexCoords(texCoord),
+        Tangents(tangent),
+        BiTangents(bitangent)
     {}
     Vertex() {}
     glm::vec3 Position;
     glm::vec3 Normal;
+    glm::vec3 Tangents;
+    glm::vec3 BiTangents;
     XMFLOAT2 TexCoords;
 
 };

@@ -1,7 +1,7 @@
 cbuffer CBuf
 {
-    matrix transform;
     matrix modelMatrix;
+    matrix MVP_Matrix;
 };
 
 struct VSInput
@@ -22,9 +22,9 @@ struct VSOutput
 VSOutput main(VSInput input)
 {
     VSOutput output;
-    output.worldPos = (float3) mul(float4(input.Position, 1.0f), modelMatrix);
-    output.Position = mul(float4(input.Position, 1.0f), transform);
-    output.Normal = mul(input.Normal, (float3x3) modelMatrix);
+    output.worldPos = (float3) mul(modelMatrix,float4(input.Position, 1.0f));
+    output.Position = mul( MVP_Matrix,float4(input.Position, 1.0f));
+    output.Normal = mul((float3x3) modelMatrix,input.Normal);
     output.tex = input.TexCoord;
     return output;
 
